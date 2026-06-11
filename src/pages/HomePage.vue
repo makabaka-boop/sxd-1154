@@ -108,7 +108,7 @@
               </span>
             </div>
             <button
-              v-if="canEdit"
+              v-if="isAdmin"
               @click="startAddItem"
               class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm bg-teal-700 text-white hover:bg-teal-800 transition-colors"
             >
@@ -122,10 +122,12 @@
               v-for="item in displayItems"
               :key="item.id"
               :item="item"
-              :is-selected="selectedItemId === item.id"
+              :is-detail-selected="selectedItemId === item.id"
+              :is-batch-selected="selectedItemIds.includes(item.id)"
               :category-name="getCategoryName(item.categoryId)"
               :category-color="getCategoryColor(item.categoryId)"
               :can-edit="canEdit"
+              :can-batch-edit="!isAuditor && canEdit"
               :is-check-mode="isCheckMode"
               @select="selectItem(item.id)"
               @toggle-select="toggleItemSelection(item.id)"
@@ -149,6 +151,7 @@
             :categories="sortedCategories"
             :can-edit="canEdit"
             :can-delete="canDelete"
+            :is-admin="isAdmin"
             :cleared-notice="clearedNotice"
             :is-duplicate="isCurrentDuplicate"
             :has-gap="currentHasGap"
@@ -161,7 +164,7 @@
     </div>
 
     <BatchActionBar
-      v-if="selectedItemIds.length > 0"
+      v-if="selectedItemIds.length > 0 && !isAuditor"
       :selected-ids="selectedItemIds"
       @batch-update="handleBatchUpdate"
       @clear-selection="selectedItemIds = []"
@@ -192,7 +195,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import {
   ClipboardList, Plus, Download, Tag, ShieldAlert, History,
   Eye, EyeOff, Package,
@@ -218,14 +221,14 @@ import type { Item, ItemStatus } from '@/types'
 
 const {
   items, addItem, updateItem, deleteItem, batchUpdateStatus,
-  computeGapLevel, checkDuplicate, allCourses, allResponsibles,
+  computeGapLevel, checkDuplicate, refreshGapLevels, allCourses, allResponsibles,
 } = useItems()
 const {
   sortedCategories, addCategory, updateCategory, deleteCategory,
   getCategoryName, getCategoryColor,
 } = useCategories()
 const {
-  currentRole, setRole, isAdmin, isUser, canEdit, canDelete,
+  currentRole, setRole, isAdmin, isUser, isAuditor, canEdit, canDelete,
   canManageCategories, canViewAudit, canExport,
 } = useRole()
 const { filters, setFilter, resetFilters, filterItems, hasActiveFilters } = useFilters()
@@ -280,6 +283,14 @@ watch(
   }
 )
 
+watch(
+  currentRole,
+  () => {
+    selectedItemIds.value = []
+    isNewItem.value = false
+  }
+)
+
 function selectItem(id: string) {
   isNewItem.value = false
   clearedNotice.value = ''
@@ -309,6 +320,7 @@ function closeDetail() {
 
 function handleSaveItem(data: Partial<Item>) {
   if (isNewItem.value) {
+    if (!isAdmin.value) return
     const newItem = addItem(
       {
         name: data.name!,
@@ -327,7 +339,16 @@ function handleSaveItem(data: Partial<Item>) {
     isNewItem.value = false
     selectedItemId.value = newItem.id
   } else if (selectedItemId.value) {
-    updateItem(selectedItemId.value, data, '当前用户', currentRole.value)
+    if (isUser.value) {
+      const safeData: Partial<Item> = {}
+      if ('quantity' in data) safeData.quantity = data.quantity
+      if ('location' in data) safeData.location = data.location
+      if ('status' in data) safeData.status = data.status
+      if ('notes' in data) safeData.notes = data.notes
+      updateItem(selectedItemId.value, safeData, '当前用户', currentRole.value)
+    } else {
+      updateItem(selectedItemId.value, data, '当前用户', currentRole.value)
+    }
   }
 }
 
@@ -361,4 +382,8 @@ function navigateToItem(itemId: string) {
   clearedNotice.value = ''
   selectedItemId.value = itemId
 }
+
+onMounted(() => {
+  refreshGapLevels()
+})
 </script>

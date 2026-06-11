@@ -13,7 +13,24 @@ export function useItems() {
   function computeGapLevel(item: Item): GapLevel {
     if (item.quantity < item.minQuantity) return 'critical'
     if (!item.responsible.trim()) return 'critical'
+    const hasDuplicate = items.value.some(
+      (i) =>
+        i.id !== item.id &&
+        i.name === item.name &&
+        i.course === item.course
+    )
+    if (hasDuplicate) return 'warning'
     return 'none'
+  }
+
+  function refreshGapLevels(course?: string, name?: string) {
+    items.value = items.value.map((item) => {
+      const shouldRefresh =
+        !course || item.course === course ||
+        !name || item.name === name
+      if (!shouldRefresh) return item
+      return { ...item, gapLevel: computeGapLevel(item) }
+    })
   }
 
   function checkDuplicate(item: Item): boolean {
@@ -42,6 +59,7 @@ export function useItems() {
     }
     newItem.gapLevel = computeGapLevel(newItem)
     items.value.push(newItem)
+    refreshGapLevels(newItem.course, newItem.name)
     addLog('create', 'item', newItem.id, `创建物品「${newItem.name}」`, operator, role)
     return newItem
   }
@@ -49,9 +67,13 @@ export function useItems() {
   function updateItem(id: string, data: Partial<Item>, operator?: string, role?: UserRole) {
     const idx = items.value.findIndex((i) => i.id === id)
     if (idx === -1) return
+    const oldCourse = items.value[idx].course
+    const oldName = items.value[idx].name
     const updated = { ...items.value[idx], ...data, updatedAt: new Date().toISOString() }
     updated.gapLevel = computeGapLevel(updated)
     items.value[idx] = updated
+    refreshGapLevels(oldCourse, oldName)
+    if (data.course || data.name) refreshGapLevels(data.course, data.name)
     const changes = Object.keys(data)
       .filter((k) => k !== 'updatedAt' && k !== 'gapLevel')
       .map((k) => `${k}: ${(data as Record<string, unknown>)[k]}`)
@@ -62,7 +84,10 @@ export function useItems() {
   function deleteItem(id: string, operator?: string, role?: UserRole) {
     const item = items.value.find((i) => i.id === id)
     items.value = items.value.filter((i) => i.id !== id)
-    if (item) addLog('delete', 'item', id, `删除物品「${item.name}」`, operator, role)
+    if (item) {
+      refreshGapLevels(item.course, item.name)
+      addLog('delete', 'item', id, `删除物品「${item.name}」`, operator, role)
+    }
   }
 
   function batchUpdateStatus(ids: string[], status: ItemStatus, operator?: string, role?: UserRole) {
@@ -105,6 +130,7 @@ export function useItems() {
     computeGapLevel,
     checkDuplicate,
     getCourseGapCount,
+    refreshGapLevels,
     saveDraft,
     clearDraft,
     allCourses,

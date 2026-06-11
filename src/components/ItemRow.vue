@@ -2,18 +2,18 @@
   <div
     :class="[
       'group flex items-center gap-3 px-4 py-3 border-b border-zinc-100 cursor-pointer transition-all duration-150',
-      isSelected ? 'bg-teal-50 border-l-2 border-l-teal-600' : 'hover:bg-zinc-50 border-l-2 border-l-transparent',
+      isDetailSelected ? 'bg-teal-50 border-l-2 border-l-teal-600' : 'hover:bg-zinc-50 border-l-2 border-l-transparent',
       isCheckMode && !isGapItem ? 'opacity-30' : '',
     ]"
     @click="$emit('select', item.id)"
   >
     <input
       type="checkbox"
-      :checked="isSelected"
+      :checked="isBatchSelected"
       @click.stop
       @change="$emit('toggleSelect', item.id)"
       class="w-4 h-4 rounded border-zinc-300 text-teal-600 focus:ring-teal-500"
-      :disabled="!canEdit"
+      :disabled="!canBatchEdit"
     />
 
     <div class="flex-1 min-w-0">
@@ -28,6 +28,10 @@
         <span v-if="item.gapLevel === 'critical'" class="flex items-center gap-0.5 text-xs text-red-600 font-medium">
           <AlertTriangle class="w-3 h-3" />
           缺口
+        </span>
+        <span v-else-if="item.gapLevel === 'warning'" class="flex items-center gap-0.5 text-xs text-amber-600 font-medium">
+          <AlertTriangle class="w-3 h-3" />
+          重复
         </span>
       </div>
       <div class="flex items-center gap-3 mt-1 text-xs text-zinc-400">
@@ -60,10 +64,12 @@ import { STATUS_LABELS } from '@/types'
 
 const props = defineProps<{
   item: Item
-  isSelected: boolean
+  isDetailSelected: boolean
+  isBatchSelected: boolean
   categoryName: string
   categoryColor: string
   canEdit: boolean
+  canBatchEdit: boolean
   isCheckMode: boolean
 }>()
 
