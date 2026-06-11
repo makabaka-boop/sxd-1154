@@ -5,6 +5,7 @@ export interface CourseStats {
   totalCount: number
   readyCount: number
   pendingSupplementCount: number
+  suspendedCount: number
   criticalGapCount: number
   completionRate: number
 }
@@ -27,6 +28,7 @@ export function useCourseStats() {
       const pendingSupplementCount = courseItems.filter(
         (i) => i.status === 'pending' || i.status === 'supplement'
       ).length
+      const suspendedCount = courseItems.filter((i) => i.status === 'suspended').length
       const criticalGapCount = courseItems.filter((i) => i.gapLevel === 'critical').length
       const completionRate = totalCount === 0 ? 0 : Math.round((readyCount / totalCount) * 100)
 
@@ -35,6 +37,7 @@ export function useCourseStats() {
         totalCount,
         readyCount,
         pendingSupplementCount,
+        suspendedCount,
         criticalGapCount,
         completionRate,
       })
@@ -55,6 +58,7 @@ export function useCourseStats() {
     const pendingSupplementCount = items.filter(
       (i) => i.status === 'pending' || i.status === 'supplement'
     ).length
+    const suspendedCount = items.filter((i) => i.status === 'suspended').length
     const criticalGapCount = items.filter((i) => i.gapLevel === 'critical').length
     const completionRate = totalCount === 0 ? 0 : Math.round((readyCount / totalCount) * 100)
 
@@ -62,6 +66,7 @@ export function useCourseStats() {
       totalCount,
       readyCount,
       pendingSupplementCount,
+      suspendedCount,
       criticalGapCount,
       completionRate,
     }

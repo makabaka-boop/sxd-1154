@@ -81,7 +81,7 @@
         :overall-stats="overallStats"
         :selected-course="filters.course"
         @select-course="handleSelectCourse"
-        @clear-course="resetFilters"
+        @clear-course="handleClearCourseFilter"
       />
     </div>
 
@@ -272,8 +272,8 @@ const displayItems = computed(() => filterForCheckMode(filteredItems.value))
 
 const issueSummary = computed(() => getIssueSummary(items.value))
 
-const courseStats = computed(() => computeCourseStats(items.value))
-const overallStats = computed(() => computeOverallStats(items.value))
+const courseStats = computed(() => computeCourseStats(displayItems.value))
+const overallStats = computed(() => computeOverallStats(displayItems.value))
 
 const currentItem = computed(() => {
   if (isNewItem.value) return null
@@ -400,23 +400,26 @@ function handleExport() {
 }
 
 function handleSelectCourse(course: string) {
-  resetFilters()
-  setFilter('course', course)
+  if (filters.course === course) {
+    setFilter('course', '')
+  } else {
+    setFilter('course', course)
+  }
+}
+
+function handleClearCourseFilter() {
+  setFilter('course', '')
 }
 
 function handleFilterByCourseFromGap(course: string) {
   showGapAnalysis.value = false
-  resetFilters()
   setFilter('course', course)
 }
 
 function navigateToItem(itemId: string, course?: string) {
   showGapAnalysis.value = false
   if (course) {
-    resetFilters()
     setFilter('course', course)
-  } else {
-    resetFilters()
   }
   isNewItem.value = false
   clearedNotice.value = ''

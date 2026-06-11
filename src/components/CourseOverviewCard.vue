@@ -16,13 +16,17 @@
             <span class="text-zinc-500">待准备/需补充</span>
           </div>
           <div class="flex items-center gap-1.5">
+            <div class="w-2 h-2 rounded-full bg-zinc-400" />
+            <span class="text-zinc-500">暂停使用</span>
+          </div>
+          <div class="flex items-center gap-1.5">
             <div class="w-2 h-2 rounded-full bg-red-500" />
             <span class="text-zinc-500">严重缺口</span>
           </div>
         </div>
       </div>
 
-      <div class="bg-zinc-50 rounded-lg p-3 mb-4 flex items-center gap-6">
+      <div class="bg-zinc-50 rounded-lg p-3 mb-4 flex items-center gap-5">
         <div class="flex items-center gap-2">
           <div class="w-8 h-8 rounded-lg bg-teal-700/10 flex items-center justify-center">
             <BookOpen class="w-4 h-4 text-teal-700" />
@@ -44,6 +48,10 @@
         <div>
           <div class="text-xs text-zinc-500">待准备/需补充</div>
           <div class="text-lg font-bold text-amber-600">{{ overallStats.pendingSupplementCount }}</div>
+        </div>
+        <div>
+          <div class="text-xs text-zinc-500">暂停使用</div>
+          <div class="text-lg font-bold text-zinc-500">{{ overallStats.suspendedCount }}</div>
         </div>
         <div>
           <div class="text-xs text-zinc-500">严重缺口</div>
@@ -86,7 +94,7 @@
             </button>
           </div>
 
-          <div class="flex items-center gap-2 mb-2">
+          <div class="flex items-center gap-2 mb-3">
             <span
               :class="[
                 'text-xs font-medium px-2 py-0.5 rounded-full',
@@ -99,20 +107,26 @@
             >
               {{ stat.completionRate === 100 ? '已就绪' : stat.criticalGapCount > 0 ? '需重点关注' : '准备中' }}
             </span>
+            <span
+              v-if="stat.suspendedCount > 0"
+              class="text-xs font-medium px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-600"
+            >
+              {{ stat.suspendedCount }} 项暂停
+            </span>
           </div>
 
           <div class="grid grid-cols-3 gap-2 mb-3">
             <div class="text-center">
               <div class="text-base font-bold text-zinc-800">{{ stat.totalCount }}</div>
-              <div class="text-[10px] text-zinc-500">总数</div>
+              <div class="text-[11px] text-zinc-500">总数</div>
             </div>
             <div class="text-center">
               <div class="text-base font-bold text-teal-600">{{ stat.readyCount }}</div>
-              <div class="text-[10px] text-zinc-500">已备齐</div>
+              <div class="text-[11px] text-zinc-500">已备齐</div>
             </div>
             <div class="text-center">
               <div class="text-base font-bold text-amber-600">{{ stat.pendingSupplementCount }}</div>
-              <div class="text-[10px] text-zinc-500">待准备</div>
+              <div class="text-[11px] text-zinc-500">待准备/需补充</div>
             </div>
           </div>
 
@@ -160,6 +174,7 @@ defineProps<{
     totalCount: number
     readyCount: number
     pendingSupplementCount: number
+    suspendedCount: number
     criticalGapCount: number
     completionRate: number
   }

@@ -12,7 +12,7 @@ export function useExport() {
 
     const summaryHeaders = [
       '课程名称', '物品总数', '已备齐数量', '待准备/需补充数量',
-      '严重缺口数量', '准备完成率', '准备状态',
+      '暂停使用数量', '严重缺口数量', '准备完成率', '准备状态',
     ]
 
     const statusLabel = (stat: CourseStats) => {
@@ -26,6 +26,7 @@ export function useExport() {
       String(stat.totalCount),
       String(stat.readyCount),
       String(stat.pendingSupplementCount),
+      String(stat.suspendedCount),
       String(stat.criticalGapCount),
       `${stat.completionRate}%`,
       statusLabel(stat),
@@ -36,6 +37,7 @@ export function useExport() {
       String(overallStats.totalCount),
       String(overallStats.readyCount),
       String(overallStats.pendingSupplementCount),
+      String(overallStats.suspendedCount),
       String(overallStats.criticalGapCount),
       `${overallStats.completionRate}%`,
       overallStats.completionRate === 100 ? '全部就绪' : overallStats.criticalGapCount > 0 ? '存在严重缺口' : '准备中',
