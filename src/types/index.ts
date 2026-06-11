@@ -25,10 +25,29 @@ export interface Item {
   updatedAt: string
 }
 
+export interface TemplateItem {
+  name: string
+  categoryId: string
+  minQuantity: number
+  location: string
+  responsible: string
+  notes: string
+}
+
+export interface ItemTemplate {
+  id: string
+  name: string
+  sourceCourse: string
+  description: string
+  items: TemplateItem[]
+  createdAt: string
+  updatedAt: string
+}
+
 export interface AuditLogEntry {
   id: string
-  action: 'create' | 'update' | 'delete' | 'batch_status'
-  itemType: 'item' | 'category'
+  action: 'create' | 'update' | 'delete' | 'batch_status' | 'create_template' | 'apply_template' | 'delete_template'
+  itemType: 'item' | 'category' | 'template'
   itemId: string
   detail: string
   operator: string

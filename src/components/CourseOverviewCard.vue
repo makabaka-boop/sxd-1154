@@ -85,13 +85,25 @@
         >
           <div class="flex items-start justify-between mb-2.5">
             <h3 class="text-sm font-semibold text-zinc-800 leading-snug pr-4">{{ stat.course }}</h3>
-            <button
-              v-if="selectedCourse === stat.course"
-              @click.stop="handleClearCourse"
-              class="p-1 text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 rounded -mr-1 -mt-1 transition-colors"
-            >
-              <X class="w-3.5 h-3.5" />
-            </button>
+            <div class="flex items-center gap-1 -mr-1 -mt-1">
+              <button
+                v-if="canManageTemplates"
+                @click.stop="handleSaveAsTemplate(stat.course)"
+                class="p-1 text-zinc-400 hover:text-teal-600 hover:bg-teal-50 rounded transition-colors"
+                title="保存为模板"
+                type="button"
+              >
+                <Save class="w-3.5 h-3.5" />
+              </button>
+              <button
+                v-if="selectedCourse === stat.course"
+                @click.stop="handleClearCourse"
+                class="p-1 text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 rounded transition-colors"
+                type="button"
+              >
+                <X class="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
 
           <div class="flex items-center gap-2 mb-3">
@@ -165,7 +177,7 @@
 </template>
 
 <script setup lang="ts">
-import { X, BookOpen, AlertTriangle, LayoutDashboard } from 'lucide-vue-next'
+import { X, BookOpen, AlertTriangle, LayoutDashboard, Save } from 'lucide-vue-next'
 import type { CourseStats } from '@/composables/useCourseStats'
 
 defineProps<{
@@ -179,11 +191,13 @@ defineProps<{
     completionRate: number
   }
   selectedCourse: string
+  canManageTemplates: boolean
 }>()
 
 const emit = defineEmits<{
   selectCourse: [course: string]
   clearCourse: []
+  saveAsTemplate: [course: string]
 }>()
 
 function handleSelectCourse(course: string) {
@@ -192,5 +206,9 @@ function handleSelectCourse(course: string) {
 
 function handleClearCourse() {
   emit('clearCourse')
+}
+
+function handleSaveAsTemplate(course: string) {
+  emit('saveAsTemplate', course)
 }
 </script>

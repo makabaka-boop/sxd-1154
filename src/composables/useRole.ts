@@ -17,6 +17,9 @@ export function useRole() {
   const canManageCategories = computed(() => isAdmin.value)
   const canViewAudit = computed(() => isAdmin.value || isAuditor.value)
   const canExport = computed(() => true)
+  const canManageTemplates = computed(() => isAdmin.value)
+  const canApplyTemplates = computed(() => isAdmin.value)
+  const canViewTemplates = computed(() => isAdmin.value || isAuditor.value)
 
   return {
     currentRole,
@@ -29,5 +32,8 @@ export function useRole() {
     canManageCategories,
     canViewAudit,
     canExport,
+    canManageTemplates,
+    canApplyTemplates,
+    canViewTemplates,
   }
 }

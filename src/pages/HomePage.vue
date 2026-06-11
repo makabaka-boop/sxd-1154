@@ -64,6 +64,15 @@
           </button>
 
           <button
+            v-if="canApplyTemplates"
+            @click="showApplyTemplateModal = true"
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm bg-zinc-100 text-zinc-600 hover:bg-zinc-200 transition-colors"
+          >
+            <Layers class="w-4 h-4" />
+            从模板生成
+          </button>
+
+          <button
             v-if="canExport"
             @click="handleExport"
             class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm bg-teal-700 text-white hover:bg-teal-800 transition-colors"
@@ -80,8 +89,10 @@
         :course-stats="courseStats"
         :overall-stats="overallStats"
         :selected-course="filters.course"
+        :can-manage-templates="canManageTemplates"
         @select-course="handleSelectCourse"
         @clear-course="handleClearCourseFilter"
+        @save-as-template="handleSaveAsTemplate"
       />
     </div>
 
@@ -209,6 +220,25 @@
       :logs="auditLog"
       @close="showAuditLog = false"
     />
+
+    <SaveTemplateModal
+      :show="showSaveTemplateModal"
+      :source-course="saveTemplateSourceCourse"
+      :course-items="saveTemplateCourseItems"
+      :categories="sortedCategories"
+      @close="showSaveTemplateModal = false"
+      @save="handleCreateTemplate"
+    />
+
+    <ApplyTemplateModal
+      :show="showApplyTemplateModal"
+      :sorted-templates="sortedTemplates"
+      :categories="sortedCategories"
+      :can-manage-templates="canManageTemplates"
+      @close="showApplyTemplateModal = false"
+      @apply="handleApplyTemplate"
+      @delete-template="handleDeleteTemplate"
+    />
   </div>
 </template>
 
@@ -216,7 +246,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import {
   ClipboardList, Plus, Download, Tag, ShieldAlert, History,
-  Eye, EyeOff, Package, BookOpen,
+  Eye, EyeOff, Package, BookOpen, Layers,
 } from 'lucide-vue-next'
 import RoleSelector from '@/components/RoleSelector.vue'
 import FilterBar from '@/components/FilterBar.vue'
@@ -228,6 +258,8 @@ import CategoryModal from '@/components/CategoryModal.vue'
 import GapAnalysisPanel from '@/components/GapAnalysisPanel.vue'
 import AuditLogPanel from '@/components/AuditLogPanel.vue'
 import CourseOverviewCard from '@/components/CourseOverviewCard.vue'
+import SaveTemplateModal from '@/components/SaveTemplateModal.vue'
+import ApplyTemplateModal from '@/components/ApplyTemplateModal.vue'
 import { useItems } from '@/composables/useItems'
 import { useCategories } from '@/composables/useCategories'
 import { useRole } from '@/composables/useRole'
@@ -237,6 +269,7 @@ import { useAutoCheck } from '@/composables/useAutoCheck'
 import { useExport } from '@/composables/useExport'
 import { useAuditLog } from '@/composables/useAuditLog'
 import { useCourseStats } from '@/composables/useCourseStats'
+import { useTemplates } from '@/composables/useTemplates'
 import type { Item, ItemStatus } from '@/types'
 
 const {
@@ -250,6 +283,7 @@ const {
 const {
   currentRole, setRole, isAdmin, isUser, isAuditor, canEdit, canDelete,
   canManageCategories, canViewAudit, canExport,
+  canManageTemplates, canApplyTemplates,
 } = useRole()
 const { filters, setFilter, resetFilters, filterItems, hasActiveFilters } = useFilters()
 const { isCheckMode, toggleCheckMode, filterForCheckMode } = useCheckMode()
@@ -257,6 +291,9 @@ const { runChecks, getIssueSummary } = useAutoCheck()
 const { exportToCSV } = useExport()
 const { auditLog } = useAuditLog()
 const { computeCourseStats, computeOverallStats } = useCourseStats()
+const {
+  sortedTemplates, createTemplate, deleteTemplate, applyTemplate, getCourseItems,
+} = useTemplates()
 
 const selectedItemId = ref<string | null>(null)
 const selectedItemIds = ref<string[]>([])
@@ -266,6 +303,10 @@ const clearedNotice = ref('')
 const showCategoryModal = ref(false)
 const showGapAnalysis = ref(false)
 const showAuditLog = ref(false)
+const showSaveTemplateModal = ref(false)
+const showApplyTemplateModal = ref(false)
+const saveTemplateSourceCourse = ref('')
+const saveTemplateCourseItems = ref<Item[]>([])
 
 const filteredItems = computed(() => filterItems(items.value))
 const displayItems = computed(() => filterForCheckMode(filteredItems.value))
@@ -424,6 +465,50 @@ function navigateToItem(itemId: string, course?: string) {
   isNewItem.value = false
   clearedNotice.value = ''
   selectedItemId.value = itemId
+}
+
+function handleSaveAsTemplate(course: string) {
+  saveTemplateSourceCourse.value = course
+  saveTemplateCourseItems.value = getCourseItems(course)
+  showSaveTemplateModal.value = true
+}
+
+function handleCreateTemplate(name: string, description: string, itemIndices: number[]) {
+  const tpl = createTemplate(
+    name,
+    saveTemplateSourceCourse.value,
+    description,
+    itemIndices,
+    '当前用户',
+    currentRole.value
+  )
+  if (tpl) {
+    showSaveTemplateModal.value = false
+  }
+}
+
+function handleApplyTemplate(
+  templateId: string,
+  targetCourse: string,
+  selectedIndices: number[],
+  responsibleOverride: string
+) {
+  const createdItems = applyTemplate(
+    templateId,
+    targetCourse,
+    selectedIndices,
+    responsibleOverride,
+    '当前用户',
+    currentRole.value
+  )
+  if (createdItems.length > 0) {
+    showApplyTemplateModal.value = false
+    setFilter('course', targetCourse)
+  }
+}
+
+function handleDeleteTemplate(id: string) {
+  deleteTemplate(id, '当前用户', currentRole.value)
 }
 
 onMounted(() => {
