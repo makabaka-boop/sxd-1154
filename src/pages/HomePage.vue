@@ -76,6 +76,16 @@
     </header>
 
     <div class="px-6 pt-4 flex-shrink-0">
+      <CourseOverviewCard
+        :course-stats="courseStats"
+        :overall-stats="overallStats"
+        :selected-course="filters.course"
+        @select-course="handleSelectCourse"
+        @clear-course="resetFilters"
+      />
+    </div>
+
+    <div class="px-6 pt-4 flex-shrink-0">
       <FilterBar
         :filters="filters"
         :courses="allCourses"
@@ -105,6 +115,13 @@
               </span>
               <span v-if="isCheckMode" class="text-xs text-orange-600 font-medium bg-orange-50 px-2 py-0.5 rounded">
                 核对模式
+              </span>
+              <span
+                v-if="filters.course"
+                class="text-xs text-teal-600 font-medium bg-teal-50 px-2 py-0.5 rounded flex items-center gap-1"
+              >
+                <BookOpen class="w-3 h-3" />
+                {{ filters.course }}
               </span>
             </div>
             <button
@@ -184,6 +201,7 @@
       :issues="issueSummary.issues"
       @close="showGapAnalysis = false"
       @navigate="navigateToItem"
+      @filter-by-course="handleFilterByCourseFromGap"
     />
 
     <AuditLogPanel
@@ -198,7 +216,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import {
   ClipboardList, Plus, Download, Tag, ShieldAlert, History,
-  Eye, EyeOff, Package,
+  Eye, EyeOff, Package, BookOpen,
 } from 'lucide-vue-next'
 import RoleSelector from '@/components/RoleSelector.vue'
 import FilterBar from '@/components/FilterBar.vue'
@@ -209,6 +227,7 @@ import BatchActionBar from '@/components/BatchActionBar.vue'
 import CategoryModal from '@/components/CategoryModal.vue'
 import GapAnalysisPanel from '@/components/GapAnalysisPanel.vue'
 import AuditLogPanel from '@/components/AuditLogPanel.vue'
+import CourseOverviewCard from '@/components/CourseOverviewCard.vue'
 import { useItems } from '@/composables/useItems'
 import { useCategories } from '@/composables/useCategories'
 import { useRole } from '@/composables/useRole'
@@ -217,6 +236,7 @@ import { useCheckMode } from '@/composables/useCheckMode'
 import { useAutoCheck } from '@/composables/useAutoCheck'
 import { useExport } from '@/composables/useExport'
 import { useAuditLog } from '@/composables/useAuditLog'
+import { useCourseStats } from '@/composables/useCourseStats'
 import type { Item, ItemStatus } from '@/types'
 
 const {
@@ -236,6 +256,7 @@ const { isCheckMode, toggleCheckMode, filterForCheckMode } = useCheckMode()
 const { runChecks, getIssueSummary } = useAutoCheck()
 const { exportToCSV } = useExport()
 const { auditLog } = useAuditLog()
+const { computeCourseStats, computeOverallStats } = useCourseStats()
 
 const selectedItemId = ref<string | null>(null)
 const selectedItemIds = ref<string[]>([])
@@ -250,6 +271,9 @@ const filteredItems = computed(() => filterItems(items.value))
 const displayItems = computed(() => filterForCheckMode(filteredItems.value))
 
 const issueSummary = computed(() => getIssueSummary(items.value))
+
+const courseStats = computed(() => computeCourseStats(items.value))
+const overallStats = computed(() => computeOverallStats(items.value))
 
 const currentItem = computed(() => {
   if (isNewItem.value) return null
@@ -375,9 +399,25 @@ function handleExport() {
   exportToCSV(displayItems.value, getCategoryName)
 }
 
-function navigateToItem(itemId: string) {
+function handleSelectCourse(course: string) {
+  resetFilters()
+  setFilter('course', course)
+}
+
+function handleFilterByCourseFromGap(course: string) {
   showGapAnalysis.value = false
   resetFilters()
+  setFilter('course', course)
+}
+
+function navigateToItem(itemId: string, course?: string) {
+  showGapAnalysis.value = false
+  if (course) {
+    resetFilters()
+    setFilter('course', course)
+  } else {
+    resetFilters()
+  }
   isNewItem.value = false
   clearedNotice.value = ''
   selectedItemId.value = itemId
